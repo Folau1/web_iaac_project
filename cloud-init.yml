@@ -1,0 +1,42 @@
+#cloud-config
+
+users:
+  - name: ubuntu
+    groups: [sudo]
+    shell: /bin/bash
+    sudo: ["ALL=(ALL) NOPASSWD:ALL"]
+    lock_passwd: true
+    ssh_authorized_keys:
+      - ${ssh_public_key}
+
+package_update: true
+
+packages:
+  - vim
+  - curl
+  - jq
+  - docker.io
+  - docker-compose-v2
+
+write_files:
+  - path: /opt/diploma/docker-compose.yml
+    permissions: "0644"
+    encoding: b64
+    content: ${docker_compose_b64}
+
+  - path: /opt/diploma/.env
+    permissions: "0600"
+    encoding: b64
+    content: ${env_b64}
+
+runcmd:
+  - systemctl enable --now docker
+  - usermod -aG docker ubuntu
+  - curl --silent --fail --header "Metadata-Flavor:Google" http://169.254.169.254/computeMetadata/v1/instance/service-accounts/default/token | jq -r .access_token | docker login --username iam --password-stdin cr.yandex
+  - cd /opt/diploma && docker compose pull
+  - cd /opt/diploma && docker compose up -d
+  - sleep 15
+  - cd /opt/diploma && docker compose ps
+  - cd /opt/diploma && docker compose logs --no-color web || true
+  - bash -lc 'set -a; source /opt/diploma/.env; set +a; echo "=== MYSQL DNS ==="; getent hosts "$DB_HOST"; echo "=== MYSQL PORT ==="; timeout 5 bash -c "cat < /dev/null > /dev/tcp/$DB_HOST/3306" && echo MYSQL_PORT_OK || echo MYSQL_PORT_FAIL'
+  - curl --max-time 5 -v http://127.0.0.1:8090/debug || true

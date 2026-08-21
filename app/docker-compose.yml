@@ -1,0 +1,10 @@
+services:
+  web:
+    image: cr.yandex/${REGISTRY_ID}/diploma-app:latest
+    restart: unless-stopped
+
+    env_file:
+      - .env
+
+    ports:
+      - "8090:5000"
