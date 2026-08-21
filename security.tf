@@ -3,9 +3,9 @@ resource "yandex_vpc_security_group" "mysql" {
   network_id = module.vpc.network_id
 
   ingress {
-    description    = "Web application"
+    description    = "MySQL from web subnet"
     protocol       = "TCP"
     port           = 3306
-    v4_cidr_blocks = ["0.0.0.0/0"]
+    v4_cidr_blocks = module.vpc.subnets["ru-central1-b"].v4_cidr_blocks
   }
 }

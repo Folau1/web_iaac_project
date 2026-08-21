@@ -25,7 +25,7 @@ resource "yandex_compute_instance" "web" {
   network_interface {
     subnet_id          = module.vpc.subnets["ru-central1-b"].id
     nat                = true
-    security_group_ids = [module.vpc.default_security_group_id]
+    security_group_ids = [yandex_vpc_security_group.web.id]
   }
 
   metadata = {
