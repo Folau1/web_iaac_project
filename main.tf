@@ -5,32 +5,43 @@ module "vpc" {
   subnets  = var.subnets
 }
 
+locals {
+  web_ingress_rules = {
+    ssh = {
+      description = "SSH"
+      port        = 22
+    }
+
+    http = {
+      description = "HTTP"
+      port        = 80
+    }
+
+    https = {
+      description = "HTTPS"
+      port        = 443
+    }
+
+    app = {
+      description = "Web application"
+      port        = 8090
+    }
+  }
+}
+
 resource "yandex_vpc_security_group" "web" {
   name       = "diploma-web-sg"
   network_id = module.vpc.network_id
 
-  ingress {
-    protocol       = "TCP"
-    port           = 22
-    v4_cidr_blocks = ["0.0.0.0/0"]
-  }
+  dynamic "ingress" {
+    for_each = local.web_ingress_rules
 
-  ingress {
-    protocol       = "TCP"
-    port           = 8090
-    v4_cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  ingress {
-    protocol       = "TCP"
-    port           = 443
-    v4_cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  ingress {
-    protocol       = "TCP"
-    port           = 80
-    v4_cidr_blocks = ["0.0.0.0/0"]
+    content {
+      description    = ingress.value.description
+      protocol       = "TCP"
+      port           = ingress.value.port
+      v4_cidr_blocks = ["0.0.0.0/0"]
+    }
   }
 
   egress {

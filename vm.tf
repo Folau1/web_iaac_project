@@ -10,6 +10,12 @@ resource "yandex_compute_instance" "web" {
   service_account_id        = yandex_iam_service_account.registry_puller.id
   allow_stopping_for_update = true
 
+
+  depends_on = [
+    yandex_container_registry_iam_binding.puller,
+    yandex_mdb_mysql_user.app,
+    yandex_lockbox_secret_version.mysql_password
+  ]
   resources {
     cores         = 2
     memory        = 2
@@ -29,7 +35,7 @@ resource "yandex_compute_instance" "web" {
   }
 
   metadata = {
-    user-data = templatefile("${path.module}/cloud-init.yml", {
+    user-data = templatefile("${path.module}/cloud-init.tftpl", {
       ssh_public_key = var.public_key
 
       docker_compose_b64 = base64encode(
